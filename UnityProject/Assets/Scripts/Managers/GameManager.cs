@@ -76,6 +76,10 @@ public partial class GameManager : MonoBehaviour
 	private bool loadedDirectlyToStation;
 	public bool LoadedDirectlyToStation => loadedDirectlyToStation;
 
+	private bool QueueProcessing;
+
+	private float timeElapsedServer = 0;
+
 	private void Awake()
 	{
 		if (Instance == null)
@@ -95,8 +99,6 @@ public partial class GameManager : MonoBehaviour
 
 		//so respawn works when loading directly to outpost station
 		RespawnCurrentlyAllowed = RespawnAllowed;
-
-
 	}
 
 	private void OnEnable()

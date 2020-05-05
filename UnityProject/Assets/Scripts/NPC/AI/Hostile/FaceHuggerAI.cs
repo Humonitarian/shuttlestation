@@ -25,7 +25,7 @@ namespace NPC
 		[SerializeField] private MobStatus currentStatus;
 		public MobStatus CurrentStatus => currentStatus;
 
-		[SerializeField] private GameObject maskObject;
+		[SerializeField] private GameObject maskObject = null;
 
 		private LayerMask hitMask;
 		private int playersLayer;
@@ -422,6 +422,12 @@ namespace NPC
 
 		public void OnSpawnServer(SpawnInfo info)
 		{
+			//FIXME This shouldn't be called by client yet it seems it is
+			if (!isServer)
+			{
+				return;
+			}
+
 			XenoQueenAI.CurrentHuggerAmt++;
 			dirSprites.SetToNPCLayer();
 			registerObject.Passable = false;
