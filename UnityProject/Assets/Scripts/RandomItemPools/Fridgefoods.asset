@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce108c02d022d1940bc023ceca025d81, type: 3}
+  m_Name: Fridgefoods
+  m_EditorClassIdentifier: 
+  pool:
+  - prefab: {fileID: 6532193109441330816, guid: f5b3ac01c1928bf4ab03433000e00ca2,
+      type: 3}
+    maxAmount: 2
+    probability: 80
+  - prefab: {fileID: 6532193109441330816, guid: dcb198c42e70def43a450ef925a6b4b5,
+      type: 3}
+    maxAmount: 6
+    probability: 60
+  - prefab: {fileID: 1150524617746403880, guid: 8293bf9edcadf604f82121a421203d88,
+      type: 3}
+    maxAmount: 4
+    probability: 20
+  - prefab: {fileID: 6602018046170396259, guid: f8ed936a0410a9740ace6f58872926c7,
+      type: 3}
+    maxAmount: 2
+    probability: 40
+  - prefab: {fileID: 6532193109441330816, guid: f06058cd7ca4b944aa68f64125386e28,
+      type: 3}
+    maxAmount: 6
+    probability: 80
+  - prefab: {fileID: 6532193109441330816, guid: 08f2ed80656ab8548b303e79671a18e8,
+      type: 3}
+    maxAmount: 3
+    probability: 100
+  - prefab: {fileID: 6602018046170396259, guid: 0b768075af10f5842bda288041fc3981,
+      type: 3}
+    maxAmount: 1
+    probability: 5
+  - prefab: {fileID: 6546673936360135170, guid: 9df8b42a3b7c7554ab9c48ba64b45d2e,
+      type: 3}
+    maxAmount: 6
+    probability: 15
+  - prefab: {fileID: 6248929123533218389, guid: 191fd33a71ba4a5499077c7f913c8e0a,
+      type: 3}
+    maxAmount: 1
+    probability: 50
