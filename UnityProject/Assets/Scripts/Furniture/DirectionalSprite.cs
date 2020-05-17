@@ -6,7 +6,7 @@ using UnityEngine.Serialization;
 
 /// <summary>
 /// Behavior for an object which has a different sprite for each direction it is facing and changes
-/// facing when Directional tells it to. 
+/// facing when Directional tells it to.
 /// Copied from OccupiableDirectionalSprite.cs. Comments from that preserved.
 ///
 /// Initial orientation should be set in Directional.
@@ -29,16 +29,22 @@ public class DirectionalSprite : NetworkBehaviour
 	[FormerlySerializedAs("s_up")]
 	public Sprite Up;
 
-	[Tooltip("sprite renderer on which to render the base sprite")]
+	[Tooltip("Sprite renderer on which to render the base sprite")]
 	public SpriteRenderer spriteRenderer;
-
-	private const string BASE_SPRITE_LAYER_NAME = "Machines";
 
 	private Directional directional;
 
 	public void Awake()
 	{
 		EnsureInit();
+	}
+
+	// Only runs in editor - useful for updating the sprite direction
+	// when the initial direction is altered via inspector.
+	private void OnValidate()
+	{
+		EnsureInit();
+		OnDirectionChanged(directional.InitialOrientation);
 	}
 
 	private void EnsureInit()
@@ -75,31 +81,4 @@ public class DirectionalSprite : NetworkBehaviour
 			spriteRenderer.sprite = Right;
 		}
 	}
-
-//changes the rendered sprite in editor based on the value set in Directional
-#if UNITY_EDITOR
-	private void Update()
-	{
-		if (Application.isEditor && !Application.isPlaying)
-		{
-			var dir = GetComponent<Directional>().InitialOrientation;
-			if (dir == Orientation.Up)
-			{
-				spriteRenderer.sprite = Up;
-			}
-			else if (dir == Orientation.Down)
-			{
-				spriteRenderer.sprite = Down;
-			}
-			else if (dir == Orientation.Left)
-			{
-				spriteRenderer.sprite = Left;
-			}
-			else
-			{
-				spriteRenderer.sprite = Right;
-			}
-		}
-	}
-#endif
 }

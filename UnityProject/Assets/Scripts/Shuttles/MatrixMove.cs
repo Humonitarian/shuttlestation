@@ -148,26 +148,45 @@ public class MatrixMove : ManagedNetworkBehaviour
 
 	public override void OnStartClient()
 	{
-		SyncPivot(pivot, pivot);
-		SyncInitialPosition(initialPosition, initialPosition);
-		clientStarted = true;
+		StartCoroutine(WaitForMatrixManager());
 	}
 
 	public override void OnStartServer()
 	{
-		InitServerState();
-
-		MatrixMoveEvents.OnStartMovementServer.AddListener( () =>
-		{
-			if ( floatingSyncHandle == null )
-			{
-				this.StartCoroutine( FloatingAwarenessSync(), ref floatingSyncHandle );
-			}
-		} );
-		MatrixMoveEvents.OnStopMovementServer.AddListener( () => this.TryStopCoroutine( ref floatingSyncHandle ) );
-
+		StartCoroutine(WaitForMatrixManager());
 		base.OnStartServer();
-		NotifyPlayers();
+	}
+
+	IEnumerator WaitForMatrixManager()
+	{
+		while (!MatrixManager.IsInitialized)
+		{
+			yield return WaitFor.EndOfFrame;
+		}
+
+		yield return WaitFor.EndOfFrame;
+		if (isServer)
+		{
+			InitServerState();
+
+			MatrixMoveEvents.OnStartMovementServer.AddListener(() =>
+			{
+				if (floatingSyncHandle == null)
+				{
+					this.StartCoroutine(FloatingAwarenessSync(), ref floatingSyncHandle);
+				}
+			});
+			MatrixMoveEvents.OnStopMovementServer.AddListener(() => this.TryStopCoroutine(ref floatingSyncHandle));
+
+			NotifyPlayers();
+		}
+		else
+		{
+			SyncPivot(pivot, pivot);
+			SyncInitialPosition(initialPosition, initialPosition);
+			MatrixMoveNewPlayer.Send(netId);
+			clientStarted = true;
+		}
 	}
 
 	[Server]
@@ -803,10 +822,10 @@ public class MatrixMove : ManagedNetworkBehaviour
 	/// <param name="playerGameObject">player to send to</param>
 	/// <param name="rotateImmediate">(for init) rotation should be applied immediately if true</param>
 	[Server]
-	public void NotifyPlayer(GameObject playerGameObject, bool rotateImmediate = false)
+	public void UpdateNewPlayer(NetworkConnection playerConn, bool rotateImmediate = false)
 	{
 		serverState.RotationTime = rotateImmediate ? 0 : rotTime;
-		MatrixMoveMessage.Send(playerGameObject, gameObject, serverState);
+		MatrixMoveMessage.Send(playerConn, gameObject, serverState);
 	}
 
 	///Only change orientation if rotation is finished

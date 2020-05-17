@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
 
@@ -68,6 +69,13 @@ public class Drawer : NetworkBehaviour, IMatrixRotation, ICheckedInteractable<Ha
 
 	public override void OnStartServer()
 	{
+		base.OnStartServer();
+		registerObject = GetComponent<RegisterObject>();
+		registerObject.WaitForMatrixInit(ServerInit);
+	}
+
+	void ServerInit(MatrixInfo matrixInfo)
+	{
 		SpawnResult traySpawn = Spawn.ServerPrefab(trayPrefab, DrawerWorldPosition);
 		if (!traySpawn.Successful)
 		{
@@ -79,23 +87,30 @@ public class Drawer : NetworkBehaviour, IMatrixRotation, ICheckedInteractable<Ha
 		trayTransform = tray.GetComponent<CustomNetTransform>();
 		trayBehaviour = tray.GetComponent<ObjectBehaviour>();
 		trayBehaviour.parentContainer = drawerPushPull;
-		trayBehaviour.VisibleState = false;		
+		trayBehaviour.VisibleState = false;
 
 		// These two will sync drawer state/orientation and render appropriate sprite
 		drawerState = DrawerState.Shut;
 		drawerOrientation = directional.CurrentDirection;
-
-		base.OnStartServer();
 	}
 
 	public override void OnStartClient()
 	{
-		traySpriteHandler = tray.GetComponentInChildren<SpriteHandler>();
-		UpdateSpriteDirection();
-
+		StartCoroutine(WaitForTray());
 		base.OnStartClient();
 	}
-	 
+
+	IEnumerator WaitForTray()
+	{
+		while (tray == null)
+		{
+			yield return WaitFor.EndOfFrame;
+		}
+
+		traySpriteHandler = tray.GetComponentInChildren<SpriteHandler>();
+		UpdateSpriteDirection();
+	}
+
 	#endregion Init Methods
 
 	/// <summary>
@@ -109,7 +124,7 @@ public class Drawer : NetworkBehaviour, IMatrixRotation, ICheckedInteractable<Ha
 
 		EjectItems(true);
 		EjectPlayers(true);
-		Despawn.ServerSingle(tray); 
+		Despawn.ServerSingle(tray);
 	}
 
 	/// <summary>
@@ -123,7 +138,7 @@ public class Drawer : NetworkBehaviour, IMatrixRotation, ICheckedInteractable<Ha
 		drawerOrientation = directional.CurrentDirection;
 	}
 
-	#region Sprite Sync
+	#region Sprite
 
 	/// <summary>
 	/// Called when drawerState [SyncVar] variable is altered or the client has just joined.
@@ -151,19 +166,30 @@ public class Drawer : NetworkBehaviour, IMatrixRotation, ICheckedInteractable<Ha
 		UpdateSpriteDirection();
 	}
 
-	#endregion Sprite Sync
-
-	protected void UpdateSpriteDirection()
+	public void OnEditorDirectionChange()
 	{
-		int spriteVariant;
-		if (drawerOrientation == Orientation.Up) spriteVariant = (int)SpriteOrientation.North;
-		else if (drawerOrientation == Orientation.Down) spriteVariant = (int)SpriteOrientation.South;
-		else if (drawerOrientation == Orientation.Left) spriteVariant = (int)SpriteOrientation.West;
-		else spriteVariant = (int)SpriteOrientation.East;
+		drawerOrientation = directional.InitialOrientation;
+		int spriteVariant = GetSpriteDirectionVariant();
+		drawerSpriteHandler.ChangeSprite((int)DrawerState.Shut);
+		drawerSpriteHandler.ChangeSpriteVariant(spriteVariant);
+	}
 
+	private int GetSpriteDirectionVariant()
+	{
+		if (drawerOrientation == Orientation.Up) return (int)SpriteOrientation.North;
+		else if (drawerOrientation == Orientation.Down) return (int)SpriteOrientation.South;
+		else if (drawerOrientation == Orientation.Left) return (int)SpriteOrientation.West;
+		else return (int)SpriteOrientation.East;
+	}
+
+	private void UpdateSpriteDirection()
+	{
+		int spriteVariant = GetSpriteDirectionVariant();
 		drawerSpriteHandler.ChangeSpriteVariant(spriteVariant);
 		traySpriteHandler.ChangeSpriteVariant(spriteVariant);
 	}
+
+	#endregion Sprite
 
 	#region Interactions
 
@@ -171,7 +197,7 @@ public class Drawer : NetworkBehaviour, IMatrixRotation, ICheckedInteractable<Ha
 	{
 		if (!DefaultWillInteract.Default(interaction, side)) return false;
 		if (interaction.HandObject != null) return false;
-	
+
 		return true;
 	}
 

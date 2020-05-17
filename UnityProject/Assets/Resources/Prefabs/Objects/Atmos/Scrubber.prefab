@@ -22,6 +22,7 @@ GameObject:
   - component: {fileID: 114276172641375114}
   - component: {fileID: -1233506647488304563}
   - component: {fileID: 6583049513569107849}
+  - component: {fileID: -175933217164935847}
   m_Layer: 10
   m_Name: Scrubber
   m_TagString: Untagged
@@ -218,7 +219,7 @@ MonoBehaviour:
     Bio: 0
   Resistances:
     LavaProof: 0
-    FireProof: 0
+    FireProof: 1
     Flammable: 0
     UnAcidable: 0
     AcidProof: 0
@@ -241,6 +242,9 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   InitialDirection: 3
+  onEditorDirectionChange:
+    m_PersistentCalls:
+      m_Calls: []
   ChangeDirectionWithMatrix: 1
   DisableSyncing: 0
 --- !u!114 &114276172641375114
@@ -328,6 +332,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spriteMatrixRotationBehavior: 1
   ignoreExtraRotation: []
+--- !u!114 &-175933217164935847
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000011763452766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62cc3ef7cd9082443aaf3c255851d15a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &3223271260076572928
 GameObject:
   m_ObjectHideFlags: 0

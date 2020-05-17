@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Mirror;
 using UnityEngine;
 
-public class FireAlarm : NetworkBehaviour, IServerLifecycle, ICheckedInteractable<HandApply>//,IAPCPowered
+public class FireAlarm : NetworkBehaviour, IServerLifecycle, ICheckedInteractable<HandApply>
 {
 	public List<FireLock> FireLockList = new List<FireLock>();
 	private MetaDataNode metaNode;
@@ -12,11 +12,17 @@ public class FireAlarm : NetworkBehaviour, IServerLifecycle, ICheckedInteractabl
 	public float coolDownTime = 1.0f;
 	public bool isInCooldown = false;
 
+	public SpriteHandler spriteHandler;
+	public Sprite topLightSpriteNormal;
+	public SpriteSheetAndData topLightSpriteAlert;
+
 	public void SendCloseAlerts()
 	{
 		if (!activated && !isInCooldown)
 		{
 			activated = true;
+			spriteHandler.SetSprite(topLightSpriteAlert, 0);
+			SoundManager.PlayNetworkedAtPos("FireAlarm", metaNode.Position);
 			StartCoroutine(SwitchCoolDown());
 			foreach (var firelock in FireLockList)
 			{
@@ -32,7 +38,9 @@ public class FireAlarm : NetworkBehaviour, IServerLifecycle, ICheckedInteractabl
 		AtmosManager.Instance.inGameFireAlarms.Add(this);
 		RegisterTile registerTile = GetComponent<RegisterTile>();
 		MetaDataLayer metaDataLayer = MatrixManager.AtPoint(registerTile.WorldPositionServer, true).MetaDataLayer;
-		metaNode = metaDataLayer.Get(registerTile.LocalPositionServer, false);
+		var wallMount = GetComponent<WallmountBehavior>();
+		var direction = wallMount.CalculateFacing().CutToInt();
+		metaNode = metaDataLayer.Get(registerTile.LocalPositionServer + direction, false);
 		foreach (var firelock in FireLockList)
 		{
 			firelock.fireAlarm = this;
@@ -67,6 +75,7 @@ public class FireAlarm : NetworkBehaviour, IServerLifecycle, ICheckedInteractabl
 		if (activated && !isInCooldown)
 		{
 			activated = false;
+			spriteHandler.SetSprite(topLightSpriteNormal);
 			StartCoroutine(SwitchCoolDown());
 			foreach (var firelock in FireLockList)
 			{
@@ -82,124 +91,29 @@ public class FireAlarm : NetworkBehaviour, IServerLifecycle, ICheckedInteractabl
 		}
 	}
 
-	private IEnumerator SwitchCoolDown()
-	{
-		isInCooldown = true;
-		yield return WaitFor.Seconds(coolDownTime);
-		isInCooldown = false;
-	}
-	/*
-	public List<LightSource> listOfLights;
-
-	public Action<bool> switchTriggerEvent;
-
-	[SyncVar(hook = nameof(SyncState))]
-	public bool isOn = true;
-
-	[SerializeField]
-	private float coolDownTime = 1.0f;
-
-	private bool isInCoolDown;
-
-	[SerializeField]
-	private Sprite[] sprites;
-
-	[SerializeField]
-	private SpriteRenderer spriteRenderer;
-
-	private PowerStates powerState = PowerStates.On;
-	private void Awake()
-	{
-		foreach (var lightSource in listOfLights)
-		{
-			if(lightSource != null)
-				lightSource.SubscribeToSwitchEvent(this);
-		}
-	}
-
-	public override void OnStartClient()
-	{
-		SyncState(isOn, isOn);
-		base.OnStartClient();
-	}
-	public bool WillInteract(HandApply interaction, NetworkSide side)
-	{
-		if (!DefaultWillInteract.Default(interaction, side)) return false;
-		if (interaction.HandObject != null && interaction.Intent == Intent.Harm) return false;
-		return !isInCoolDown;
-	}
-
-	public void ServerPerformInteraction(HandApply interaction)
-	{
-		StartCoroutine(SwitchCoolDown());
-		if (powerState == PowerStates.Off || powerState == PowerStates.LowVoltage) return;
-		ServerChangeState(!isOn);
-	}
-
-	private void SyncState(bool oldState, bool newState)
-	{
-		isOn = newState;
-		spriteRenderer.sprite = isOn ? sprites[0] : sprites[1];
-	}
-
-	[Server]
-	public void ServerChangeState(bool newState)
-	{
-		isOn = newState;
-		switchTriggerEvent?.Invoke(isOn);
-	}
-
+	//Copied over from LightSwitchV2.cs
 	void OnDrawGizmosSelected()
 	{
 		var sprite = GetComponentInChildren<SpriteRenderer>();
 		if (sprite == null)
 			return;
 
-		//Highlighting all controlled lightSources
-		Gizmos.color = new Color(1, 1, 0, 1);
-		for (int i = 0; i < listOfLights.Count; i++)
+		//Highlighting all controlled FireLocks
+		Gizmos.color = new Color(1, 0.5f, 0, 1);
+		for (int i = 0; i < FireLockList.Count; i++)
 		{
-			var lightSource = listOfLights[i];
-			if(lightSource == null) continue;
-			Gizmos.DrawLine(sprite.transform.position, lightSource.transform.position);
-			Gizmos.DrawSphere(lightSource.transform.position, 0.25f);
-		}
-	}
-
-	public void PowerNetworkUpdate(float Voltage)
-	{
-
-	}
-
-	public void StateUpdate(PowerStates State)
-	{
-		switch (State)
-		{
-			case PowerStates.On:
-				ServerChangeState(true);
-				powerState = State;
-				break;
-			case PowerStates.LowVoltage:
-				ServerChangeState(false);
-				powerState = State;
-				break;
-			case PowerStates.OverVoltage:
-				ServerChangeState(true);
-				powerState = State;
-				break;
-			default:
-				ServerChangeState(false);
-				powerState = State;
-				break;
+			var FireLock = FireLockList[i];
+			if(FireLock == null) continue;
+			Gizmos.DrawLine(sprite.transform.position, FireLock.transform.position);
+			Gizmos.DrawSphere(FireLock.transform.position, 0.25f);
 		}
 	}
 
 	private IEnumerator SwitchCoolDown()
 	{
-		isInCoolDown = true;
+		isInCooldown = true;
 		yield return WaitFor.Seconds(coolDownTime);
-		isInCoolDown = false;
+		isInCooldown = false;
 	}
-	*/
 }
 

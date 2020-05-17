@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
+using Chemistry.Components;
 
 //Used when spawning the food
 [RequireComponent(typeof(CustomNetTransform))]
@@ -20,7 +21,7 @@ public class GrownFood : NetworkBehaviour
 	[SerializeField]
 	private SpriteHandler Sprite;
 	[SerializeField]
-	private Edible edible = null;
+	private Edible edible;
 
 
 
@@ -79,7 +80,8 @@ public class GrownFood : NetworkBehaviour
 	/// </summary>
 	private void SetupEdible()
 	{
-		edible.NutritionLevel = Mathf.FloorToInt(reagentContainer[nutrient] ?? 0);
+		//DOES NOT WORK! DO NOT USE THIS!
+		// edible.NutritionLevel = Mathf.FloorToInt(reagentContainer[nutrient]);
 	}
 
 }

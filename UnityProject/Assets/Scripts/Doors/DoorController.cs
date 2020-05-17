@@ -82,7 +82,7 @@ public class DoorController : NetworkBehaviour, IServerSpawn
 	private int pressureThresholdCaution = 30; // kPa, both thresholds arbitrarily chosen
 	private int pressureThresholdWarning = 120;
 	private bool pressureWarnActive = false;
-	public PressureLevel pressureLevel = PressureLevel.Safe;
+	[HideInInspector] public PressureLevel pressureLevel = PressureLevel.Safe;
 
 	public OpeningDirection openingDirection;
 	private RegisterDoor registerTile;
@@ -147,6 +147,7 @@ public class DoorController : NetworkBehaviour, IServerSpawn
 	{
 		EnsureInit();
 		SyncIsWelded(isWelded, isWelded);
+		DoorNewPlayer.Send(netId);
 	}
 
 	/// <summary>
@@ -245,21 +246,14 @@ public class DoorController : NetworkBehaviour, IServerSpawn
 		delayStartTimeTryOpen = Time.time;
 
 		// Sliding door is not passable according to matrix
-		if ( !IsClosed && !isPerformingAction && ( matrix.CanCloseDoorAt( registerTile.LocalPositionServer, true ) || doorType == DoorType.sliding ) )
+		if( !IsClosed && !isPerformingAction && (ignorePassableChecks || matrix.CanCloseDoorAt( registerTile.LocalPositionServer, true ) || doorType == DoorType.sliding) )
 		{
 			if (isHackable && hackingLoaded)
 			{
 				HackingNode onShouldClose = hackingProcess.GetNodeWithInternalIdentifier("OnShouldClose");
 				onShouldClose.SendOutputToConnectedNodes();
 			}
-			// Sliding door is not passable according to matrix
-            if( !IsClosed && !isPerformingAction && (ignorePassableChecks || matrix.CanCloseDoorAt( registerTile.LocalPositionServer, true ) || doorType == DoorType.sliding) ) {
-	            ServerClose();
-            }
-			else
-			{
-				ServerClose();
-			}
+			ServerClose();
 		}
 		else
 		{
@@ -502,6 +496,7 @@ public class DoorController : NetworkBehaviour, IServerSpawn
 
 	public void OnHoverStart()
 	{
+		if (gameObject.IsAtHiddenPos()) return;
 		UIManager.SetToolTip = doorType + " Door";
 	}
 
@@ -515,12 +510,11 @@ public class DoorController : NetworkBehaviour, IServerSpawn
 	/// <summary>
 	/// Used when player is joining, tells player to open the door if it is opened.
 	/// </summary>
-	/// <param name="playerGameObject">game object of the player to inform</param>
-	public void NotifyPlayer(GameObject playerGameObject)
+	public void UpdateNewPlayer(NetworkConnection playerConn)
 	{
 		if (!IsClosed)
 		{
-			DoorUpdateMessage.Send(playerGameObject, gameObject, DoorUpdateType.Open, true);
+			DoorUpdateMessage.Send(playerConn, gameObject, DoorUpdateType.Open, true);
 		}
 	}
 
@@ -534,8 +528,9 @@ public class DoorController : NetworkBehaviour, IServerSpawn
 			{
 				hackingProcess.HackingGUI.RemovePlayer(ply.gameObject);
 				TabUpdateMessage.Send(ply.gameObject, hackingProcess.HackingGUI.Provider, NetTabType.HackingPanel, TabAction.Close);
-				Electrocution elec = new Electrocution();
-				elec.ElectrocutePlayer(ply.gameObject, (Vector2Int)registerTile.WorldPositionServer, "wire", 9080);
+				var playerLHB = obj.GetComponent<LivingHealthBehaviour>();
+				var electrocution = new Electrocution(9080, registerTile.WorldPositionServer, "wire");
+				if (playerLHB != null) playerLHB.Electrocute(electrocution);
 			}
 		}
 
