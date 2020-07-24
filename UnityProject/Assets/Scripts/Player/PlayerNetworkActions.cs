@@ -1,11 +1,17 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using AdminTools;
+using Audio;
+using Items.PDA;
 using UnityEngine;
 using Mirror;
+using UI.PDA;
+using Audio.Containers;
+using UnityEngine;
+using Mirror;
+using DiscordWebhook;
+using InGameEvents;
 
 public partial class PlayerNetworkActions : NetworkBehaviour
 {
@@ -242,11 +248,14 @@ public partial class PlayerNetworkActions : NetworkBehaviour
 		if (!Cooldowns.TryStartServer(playerScript, CommonCooldowns.Instance.Interaction)) return;
 		var timeTaken = occupiedSlots * .4f;
 		void ProgressComplete()
-		{
+		{ var victimsHealth = toDisrobe.GetComponent < PlayerHealth >();
 			foreach (var itemSlot in itemStorage.GetItemSlots())
 			{
 				//skip slots which have special uses
 				if (itemSlot.NamedSlot == NamedSlot.handcuffs) continue;
+						// cancels out of the loop if player gets up
+				if (!victimsHealth.IsCrit) break;
+
 				Inventory.ServerDrop(itemSlot);
 			}
 		}
@@ -327,6 +336,16 @@ public partial class PlayerNetworkActions : NetworkBehaviour
 		VotingManager.Instance.RegisterVote(connectedPlayer.UserId, isFor);
 	}
 
+	[Command]
+	public void CmdVetoRestartVote(string adminId, string adminToken)
+	{
+		var admin = PlayerList.Instance.GetAdmin(adminId, adminToken);
+		if (admin == null) return;
+
+		if (VotingManager.Instance == null) return;
+		VotingManager.Instance.VetoVote(adminId);
+	}
+
 	/// <summary>
 	/// Switches the pickup mode for the InteractableStorage in the players hands
 	/// TODO should probably be turned into some kind of UIAction component which can hold all these functions
@@ -366,7 +385,7 @@ public partial class PlayerNetworkActions : NetworkBehaviour
 	[TargetRpc]
 	public void TargetStopMusic(NetworkConnection target)
 	{
-		SoundManager.SongTracker.Stop();
+		MusicManager.SongTracker.Stop();
 	}
 
 	/// <summary>
@@ -546,6 +565,8 @@ public partial class PlayerNetworkActions : NetworkBehaviour
 
 		if (playerScript.mind.IsSpectator) return;
 
+		if(playerScript.mind.ghostLocked) return;
+
 		if (!playerScript.IsGhost )
 		{
 			Logger.LogWarningFormat("Either player {0} is not dead or not currently a ghost, ignoring EnterBody", Category.Health, body);
@@ -611,6 +632,20 @@ public partial class PlayerNetworkActions : NetworkBehaviour
 				paperComponent.UpdatePlayer(gameObject);
 			}
 		}
+	}
+
+
+	/// <summary>
+	/// A variation of CmdRequestPaperEdit, but is used for the PDA notes system
+	/// </summary>
+	[Command]
+	public void CmdRequestNoteEdit(GameObject pdaObject, string newMsg)
+	{
+		if (!Validations.CanInteract(playerScript, NetworkSide.Server)) return;
+		PDANotesNetworkHandler noteNetworkScript = pdaObject.GetComponent<PDANotesNetworkHandler>();
+		noteNetworkScript.SetServerString(newMsg);
+		noteNetworkScript.UpdatePlayer(gameObject);
+
 	}
 
 	[Command]
@@ -805,28 +840,6 @@ public partial class PlayerNetworkActions : NetworkBehaviour
 	}
 
 	[Command]
-	public void CmdPlaySound(string index, string adminId, string adminToken)
-	{
-		PlaySound(index, adminId, adminToken);
-	}
-
-	[Server]
-	public void PlaySound(string index, string adminId, string adminToken)
-	{
-		var admin = PlayerList.Instance.GetAdmin(adminId, adminToken);
-		if (admin == null) return;
-
-		var players = FindObjectsOfType(typeof(PlayerScript));
-
-		if (players == null) return;//If list of Players is empty dont run rest of code.
-
-		foreach (PlayerScript player in players)
-		{
-			SoundManager.PlayNetworkedForPlayerAtPos(player.gameObject, player.gameObject.GetComponent<RegisterTile>().WorldPositionClient, index);
-		}
-	}
-
-	[Command]
 	public void CmdAdminMakeHotspot(GameObject onObject, string adminId, string adminToken)
 	{
 		var admin = PlayerList.Instance.GetAdmin(adminId, adminToken);
@@ -862,27 +875,23 @@ public partial class PlayerNetworkActions : NetworkBehaviour
 	}
 
 	[Command]
-	public void CmdSendCentCommAnnouncement(string adminId, string adminToken, string text)
-	{
-		var admin = PlayerList.Instance.GetAdmin(adminId, adminToken);
-		if (admin == null) return;
-
-		CentComm.MakeAnnouncement(CentComm.CentCommAnnounceTemplate, text, CentComm.UpdateSound.notice);
-	}
-
-	[Command]
-	public void CmdSendCentCommReport(string adminId, string adminToken, string text)
-	{
-		var admin = PlayerList.Instance.GetAdmin(adminId, adminToken);
-		if (admin == null) return;
-		GameManager.Instance.CentComm.MakeCommandReport(text,
-														CentComm.UpdateSound.notice);
-	}
-
-	[Command]
 	public void CmdGetAdminOverlayFullUpdate(string adminId, string adminToken)
 	{
 		AdminOverlay.RequestFullUpdate(adminId, adminToken);
 	}
+
 	#endregion
+
+	[Command]
+	public void CmdRequestSpell(int spellIndex)
+	{
+		foreach (var spell in playerScript.mind.Spells)
+		{
+			if (spell.SpellData.Index == spellIndex)
+			{
+				spell.CallActionServer(PlayerList.Instance.Get(gameObject));
+				return;
+			}
+		}
+	}
 }

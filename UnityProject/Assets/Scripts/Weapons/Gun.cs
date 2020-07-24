@@ -28,7 +28,14 @@ public class Gun : NetworkBehaviour, IPredictedCheckedInteractable<AimApply>, IC
 	[SerializeField]
 	private GameObject ammoPrefab = null;
 	[SerializeField]
-	private GameObject casingPrefab = null;
+	private GameObject genericInternalMag = null;
+	[SerializeField]
+	private GameObject casingPrefabOverride = null;
+	/// <summary>
+	/// If false prevents players from removing the magazine from their weapon.
+	/// </summary>
+	[SerializeField]
+	private bool allowMagazineRemoval = true;
 
 	/// <summary>
 	///     The type of ammo this weapon will allow, this is a string and not an enum for diversity
@@ -48,19 +55,20 @@ public class Gun : NetworkBehaviour, IPredictedCheckedInteractable<AimApply>, IC
 	/// <summary>
 	///     Checks if the weapon should spawn weapon casings
 	/// </summary>
-	public bool SpawnsCaseing = true;
+	public bool SpawnsCasing = true;
 
 	/// <summary>
 	///     Whether the gun uses an internal magazine.
 	/// </summary>
-	[HideInInspector]
+	[HideInInspector] // will be shown by the code at the very end, if appropriate
 	public bool MagInternal = false;
 
+	[HideInInspector]
+	public double burstCooldown = 0;
 
-	/// <summary>
-	/// State whether or not you can remove the mag from the gun
-	/// </summary>
-	public bool CanRemovableMag = true;
+	[HideInInspector]
+	public double burstCount = 3;
+	private double currentBurstCount = 0;
 
 	/// <summary>
 	///     If the gun should eject it's magazine automatically (external-magazine-specific)
@@ -157,12 +165,11 @@ public class Gun : NetworkBehaviour, IPredictedCheckedInteractable<AimApply>, IC
 
 	private void Awake()
 	{
+		//init weapon with missing settings
 		GetComponent<ItemAttributesV2>().AddTrait(CommonTraits.Instance.Gun);
 		itemStorage = GetComponent<ItemStorage>();
 		magSlot = itemStorage.GetIndexedItemSlot(0);
 		registerTile = GetComponent<RegisterTile>();
-		//init weapon with missing settings
-
 
 		queuedShots = new Queue<QueuedShot>();
 	}
@@ -193,7 +200,7 @@ public class Gun : NetworkBehaviour, IPredictedCheckedInteractable<AimApply>, IC
 			Logger.LogTraceFormat("Auto-populate internal magazine for {0}", Category.Inventory, name);
 
 			//Make generic magazine and modify it to fit weapon
-			//GameObject ammoPrefab = AmmoPrefabs.GetAmmoPrefab(AmmoType.Internal);
+			GameObject ammoPrefab = genericInternalMag;
 
 			Inventory.ServerAdd(Spawn.ServerPrefab(ammoPrefab).GameObject, magSlot);
 
@@ -209,10 +216,6 @@ public class Gun : NetworkBehaviour, IPredictedCheckedInteractable<AimApply>, IC
 		{
 			//populate with a full external mag on spawn
 			Logger.LogTraceFormat("Auto-populate external magazine for {0}", Category.Inventory, name);
-
-			//AmmoPrefabs
-			//GameObject ammoPrefab = AmmoPrefabs.GetAmmoPrefab(ammoType);
-
 			Inventory.ServerAdd(Spawn.ServerPrefab(ammoPrefab).GameObject, magSlot);
 		}
 	}
@@ -252,7 +255,7 @@ public class Gun : NetworkBehaviour, IPredictedCheckedInteractable<AimApply>, IC
 		//firing countdown
 		if (Projectile != null && CurrentMagazine.ClientAmmoRemains <= 0 && (interaction.Performer != PlayerManager.LocalPlayer || FireCountDown <= 0))
 		{
-			if (SmartGun && CanRemovableMag) // should be forced off when using an internal magazine
+			if (SmartGun && allowMagazineRemoval) // smartGun is forced off when using an internal magazine
 			{
 				RequestUnload(CurrentMagazine);
 				OutOfAmmoSFX();
@@ -272,12 +275,36 @@ public class Gun : NetworkBehaviour, IPredictedCheckedInteractable<AimApply>, IC
 		{
 			if (interaction.MouseButtonState == MouseButtonState.PRESS)
 			{
+				if (currentBurstCount != 0)
+				{
+					currentBurstCount = 0;
+				}
 				return true;
 			}
 			else
 			{
-				//being held, only can shoot if this is an automatic
-				return WeaponType == WeaponType.FullyAutomatic;
+				if (WeaponType == WeaponType.Burst)
+				{
+					//being held and is a burst weapon, check how many shots have been fired our the current burst
+					if (currentBurstCount < burstCount)
+					{
+						//we have shot less then the max allowed shots in our current burst, increase and fire again
+						currentBurstCount++;
+						return true;
+					}
+					else if (currentBurstCount >= burstCount)
+					{
+						//we have shot the max allowed shots in our current burst, start cooldown and then fire the first shot
+						WaitFor.Seconds((float)burstCooldown);
+						currentBurstCount = 1;
+						return true;
+					}
+				}
+				else
+				{
+					//being held, only can shoot if this is an automatic
+					return WeaponType == WeaponType.FullyAutomatic;
+				}
 			}
 		}
 
@@ -297,7 +324,7 @@ public class Gun : NetworkBehaviour, IPredictedCheckedInteractable<AimApply>, IC
 		//	ourselves.
 		var isSuicide = false;
 		if (interaction.MouseButtonState == MouseButtonState.PRESS ||
-			(WeaponType == WeaponType.FullyAutomatic && AllowSuicide))
+			(WeaponType != WeaponType.SemiAutomatic && AllowSuicide))
 		{
 			isSuicide = interaction.IsAimingAtSelf;
 			AllowSuicide = isSuicide;
@@ -318,7 +345,7 @@ public class Gun : NetworkBehaviour, IPredictedCheckedInteractable<AimApply>, IC
 		//	ourselves.
 		var isSuicide = false;
 		if (interaction.MouseButtonState == MouseButtonState.PRESS ||
-			(WeaponType == WeaponType.FullyAutomatic && AllowSuicide))
+			(WeaponType != WeaponType.SemiAutomatic && AllowSuicide))
 		{
 			isSuicide = interaction.IsAimingAtSelf;
 			AllowSuicide = isSuicide;
@@ -333,7 +360,7 @@ public class Gun : NetworkBehaviour, IPredictedCheckedInteractable<AimApply>, IC
 	public bool Interact(HandActivate interaction)
 	{
 		//try ejecting the mag if external
-		if (CurrentMagazine != null && !MagInternal && CanRemovableMag)
+		if (CurrentMagazine != null && !MagInternal && allowMagazineRemoval)
 		{
 			RequestUnload(CurrentMagazine);
 			return true;
@@ -408,7 +435,7 @@ public class Gun : NetworkBehaviour, IPredictedCheckedInteractable<AimApply>, IC
 			DequeueAndProcessServerShot();
 		}
 
-		if (queuedUnload && queuedShots.Count == 0 && CanRemovableMag)
+		if (queuedUnload && queuedShots.Count == 0 && allowMagazineRemoval)
 		{
 			// done processing shot queue,
 			// perform the queued unload action, causing all clients and server to update their version of this Weapon
@@ -454,7 +481,7 @@ public class Gun : NetworkBehaviour, IPredictedCheckedInteractable<AimApply>, IC
 			if (this.ammoType == ammoType)
 			{
 				var hand = UIManager.Hands.CurrentSlot.NamedSlot;
-				RequestReload(magazine.gameObject, hand, true);
+				RequestReload(magazine.gameObject, hand);
 			}
 			if (this.ammoType != ammoType)
 			{
@@ -544,14 +571,15 @@ public class Gun : NetworkBehaviour, IPredictedCheckedInteractable<AimApply>, IC
 			//kickback
 			shooterScript.pushPull.Pushable.NewtonianMove((-nextShot.finalDirection).NormalizeToInt());
 
-			if (SpawnsCaseing)
+			if (SpawnsCasing)
 			{
-				if (casingPrefab == null)
+				if (casingPrefabOverride == null)
 				{
-					casingPrefab = Resources.Load("BulletCasing") as GameObject;
+					//no casing override set, use normal casing prefab
+					casingPrefabOverride = Resources.Load("BulletCasing") as GameObject;
 				}
 
-				Spawn.ServerPrefab(casingPrefab, nextShot.shooter.transform.position, nextShot.shooter.transform.parent);
+				Spawn.ServerPrefab(casingPrefabOverride, nextShot.shooter.transform.position, nextShot.shooter.transform.parent);
 			}
 		}
 	}
@@ -643,7 +671,7 @@ public class Gun : NetworkBehaviour, IPredictedCheckedInteractable<AimApply>, IC
 	/// <param name="m"></param>
 	/// <param name="hand"></param>
 	/// <param name="current"></param>
-	private void RequestReload(GameObject m, NamedSlot hand, bool current)
+	private void RequestReload(GameObject m, NamedSlot hand)
 	{
 		//TODO: Handle this using IF2 instead of Cmd
 
@@ -814,6 +842,12 @@ public enum WeaponType
 			}
 			else{
 				script.SmartGun = EditorGUILayout.Toggle("Smart Gun", script.SmartGun);
+			}
+
+			if (script.WeaponType == WeaponType.Burst)
+			{
+				script.burstCooldown = EditorGUILayout.DoubleField("Burst Cooldown", script.burstCooldown);
+				script.burstCount = EditorGUILayout.DoubleField("Burst Count", script.burstCount);
 			}
 		}
 	}
