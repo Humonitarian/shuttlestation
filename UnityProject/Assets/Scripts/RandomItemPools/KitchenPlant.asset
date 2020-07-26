@@ -49,6 +49,7 @@ MonoBehaviour:
       type: 3}
     maxAmount: 1
     probability: 100
-  - prefab: {fileID: 0}
-    maxAmount: 0
-    probability: 0
+  - prefab: {fileID: 2317139877093392249, guid: 7765910587f4dc04d82f04bf0ccf2d21,
+      type: 3}
+    maxAmount: 1
+    probability: 3
