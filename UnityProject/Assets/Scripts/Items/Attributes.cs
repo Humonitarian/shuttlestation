@@ -1,23 +1,19 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using IngameDebugConsole;
 using UnityEngine;
 using Mirror;
-using UnityEngine.Serialization;
-using Random = System.Random;
 
 
 [RequireComponent(typeof(Integrity))]
 [RequireComponent(typeof(CustomNetTransform))]
-public class Attributes : NetworkBehaviour, IRightClickable, IServerSpawn, IExaminable
+public class Attributes : NetworkBehaviour, IRightClickable, IExaminable
 {
 
 	[Tooltip("Display name of this item when spawned.")]
 	[SerializeField]
-	private string initialName = null;
+	public string initialName = null;
 
 	[SyncVar(hook = nameof(SyncArticleName))]
 	private string articleName;
@@ -32,7 +28,7 @@ public class Attributes : NetworkBehaviour, IRightClickable, IServerSpawn, IExam
 
 	[Tooltip("Description of this item when spawned.")]
 	[SerializeField]
-	private string initialDescription = null;
+	public string initialDescription = null;
 
 	[Tooltip("Will this item highlight on mouseover?")]
 	[SerializeField]
@@ -59,7 +55,7 @@ public class Attributes : NetworkBehaviour, IRightClickable, IServerSpawn, IExam
 
 	[Tooltip("Should an alternate name be used when displaying this in the cargo console report?")]
 	[SerializeField]
-	private string exportName = null;
+	private string exportName = "";
 	public string ExportName => exportName;
 
 	[Tooltip("Additional message to display in the cargo console report.")]
@@ -82,11 +78,11 @@ public class Attributes : NetworkBehaviour, IRightClickable, IServerSpawn, IExam
 		base.OnStartClient();
 	}
 
-
-	public virtual void OnSpawnServer(SpawnInfo info)
+	public override void OnStartServer()
 	{
 		SyncArticleName(articleName, initialName);
 		SyncArticleDescription(articleDescription, initialDescription);
+		base.OnStartServer();
 	}
 
 	private void SyncArticleName(string oldName, string newName)
@@ -126,8 +122,7 @@ public class Attributes : NetworkBehaviour, IRightClickable, IServerSpawn, IExam
 		if (string.IsNullOrWhiteSpace(displayName)) displayName = "error";
 
 		UIManager.SetToolTip =
-			displayName.First().ToString().ToUpper() + displayName.Substring(1) +
-			(string.IsNullOrEmpty(articleDescription) ? "" : $" ({ articleDescription })");
+			displayName.First().ToString().ToUpper() + displayName.Substring(1);
 	}
 
 	public void OnHoverEnd()
@@ -136,7 +131,6 @@ public class Attributes : NetworkBehaviour, IRightClickable, IServerSpawn, IExam
 
 		UIManager.SetToolTip = string.Empty;
 	}
-
 
 	// Sends examine event to all monobehaviors on gameobject - keep for now - TODO: integrate w shift examine
 	public void SendExamine()
@@ -177,7 +171,6 @@ public class Attributes : NetworkBehaviour, IRightClickable, IServerSpawn, IExam
 			.AddElement("Examine", OnExamine);
 	}
 
-
 	public void ServerSetArticleName(string newName)
 	{
 		SyncArticleName(articleName, newName);
@@ -188,5 +181,4 @@ public class Attributes : NetworkBehaviour, IRightClickable, IServerSpawn, IExam
 	{
 		SyncArticleDescription(articleDescription, desc);
 	}
-
 }

@@ -4,7 +4,9 @@ using System.Globalization;
 using System.Linq;
 using Mirror;
 using UnityEngine;
+using Objects;
 using Random = UnityEngine.Random;
+using System.Text;
 
 public static class SweetExtensions
 {
@@ -21,6 +23,11 @@ public static class SweetExtensions
 	public static ItemAttributesV2 Item(this GameObject go)
 	{
 		return go.GetComponent<ItemAttributesV2>();
+	}
+
+	public static ObjectAttributes Object(this GameObject go)
+	{
+		return go.GetComponent<ObjectAttributes>();
 	}
 
 	/// <summary>
@@ -44,10 +51,19 @@ public static class SweetExtensions
 			}
 		}
 
-		var player = go.Player();
-		if (player != null && !String.IsNullOrWhiteSpace(player.Name))
+		var entityObject = go.Object();
+		if (entityObject != null)
 		{
-			return player.Name;
+			if (!string.IsNullOrWhiteSpace(entityObject.InitialName))
+			{
+				return entityObject.InitialName;
+			}
+		}
+
+		var player = go.Player();
+		if (player != null && !String.IsNullOrWhiteSpace(player.Script.visibleName))
+		{
+			return player.Script.visibleName;
 		}
 
 		return go.name.Replace("NPC_", "").Replace("_", " ").Replace("(Clone)","");
@@ -106,12 +122,20 @@ public static class SweetExtensions
 	/// Wraps provided index value if it's more than array length or is negative
 	public static T Wrap<T>(this T[] array, int index)
 	{
+		if (array == null || array.Length == 0)
+		{
+			return default(T);
+		}
 		return array[((index % array.Length) + array.Length) % array.Length];
 	}
 
 	/// Wraps provided index value if it's more than list length or is negative
 	public static T Wrap<T>(this List<T> list, int index)
 	{
+		if (list == null || list.Count == 0)
+		{
+			return default(T);
+		}
 		return list[((index % list.Count) + list.Count) % list.Count];
 	}
 
@@ -345,5 +369,17 @@ public static class SweetExtensions
 			? v
 			: defaultValue;
 
+	}
+
+	/// <summary>
+	/// Removes the last instance of the given string from the given StringBuilder.
+	/// </summary>
+	/// <returns>the final StringBuilder</returns>
+	public static StringBuilder RemoveLast(this StringBuilder sb, string str)
+	{
+		if (sb.Length < 1) return sb;
+
+		sb.Remove(sb.ToString().LastIndexOf(str), str.Length);
+		return sb;
 	}
 }

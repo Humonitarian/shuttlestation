@@ -3,6 +3,8 @@ using Mirror;
 using UnityEditor;
 using UnityEngine.SceneManagement;
 using WebSocketSharp;
+using UnityEngine;
+using System.Linq;
 
 //The scene list on the server
 public partial class SubSceneManager
@@ -110,7 +112,7 @@ public partial class SubSceneManager
 		//CENTCOM
 		foreach (var centComData in additionalSceneList.CentComScenes)
 		{
-			if (centComData.DependentScene == null || centComData.CentComSceneName == null)continue;
+			if (centComData.DependentScene == null || centComData.CentComSceneName == null) continue;
 
 			if (centComData.DependentScene != serverChosenMainStation) continue;
 
@@ -125,12 +127,14 @@ public partial class SubSceneManager
 			yield break;
 		}
 
+		var pickedMap = additionalSceneList.defaultCentComScenes.PickRandom();
+
 		//If no special CentCom load default.
-		yield return StartCoroutine(LoadSubScene(additionalSceneList.defaultCentComScene, loadTimer));
+		yield return StartCoroutine(LoadSubScene(pickedMap, loadTimer));
 
 		loadedScenesList.Add(new SceneInfo
 		{
-			SceneName = additionalSceneList.defaultCentComScene,
+			SceneName = pickedMap,
 			SceneType = SceneType.AdditionalScenes
 		});
 	}
@@ -142,6 +146,7 @@ public partial class SubSceneManager
 		{
 			yield return null;
 		}
+
 		loadTimer.IncrementLoadBar("Loading Additional Scenes");
 		foreach (var additionalScene in additionalSceneList.AdditionalScenes)
 		{
@@ -208,6 +213,73 @@ public partial class SubSceneManager
 			});
 		}
 	}
+
+	#region GameMode Unique Scenes
+
+	public IEnumerator LoadSyndicate()
+	{
+		if (SyndicateLoaded) yield break;
+		var pickedMap = additionalSceneList.defaultSyndicateScenes.PickRandom();
+
+		foreach (var syndicateData in additionalSceneList.SyndicateScenes)
+		{
+			if (syndicateData.DependentScene == null || syndicateData.SyndicateSceneName == null)
+				continue;
+			if (syndicateData.DependentScene != serverChosenMainStation)
+				continue;
+
+			pickedMap = syndicateData.SyndicateSceneName;
+			break;
+		}
+		yield return StartCoroutine(LoadSubScene(pickedMap));
+
+		loadedScenesList.Add(new SceneInfo
+		{
+			SceneName = pickedMap,
+			SceneType = SceneType.AdditionalScenes
+		});
+
+		PokeClientSubScene.SendToAll( pickedMap);
+		yield return StartCoroutine(RunOnSpawnServer(pickedMap));
+		SyndicateLoaded = true;
+	}
+
+	private IEnumerator RunOnSpawnServer(string map)
+	{
+		if (GameManager.Instance.CurrentRoundState == RoundState.Started) // the game started long ago!
+		{
+			yield return new WaitForEndOfFrame(); //let the matrix initialize first
+			var loadedScene = SceneManager.GetSceneByName(map);
+
+			var rootObjects = loadedScene.GetRootGameObjects();
+			foreach (var matrix in rootObjects) //different matrix of a scene, ex: syndie outpost and shuttle
+			{
+				var iserverspawnlist = matrix.GetComponentsInChildren<IServerSpawn>();
+				GameManager.Instance.MappedOnSpawnServer(iserverspawnlist);
+			}
+		}
+	}
+
+	public IEnumerator LoadWizard()
+	{
+		if (WizardLoaded) yield break;
+
+		string pickedScene = additionalSceneList.WizardScenes.PickRandom();
+
+		yield return StartCoroutine(LoadSubScene(pickedScene));
+
+		loadedScenesList.Add(new SceneInfo
+		{
+			SceneName = pickedScene,
+			SceneType = SceneType.AdditionalScenes
+		});
+
+		PokeClientSubScene.SendToAll(pickedScene);
+		yield return StartCoroutine(RunOnSpawnServer(pickedScene));
+		WizardLoaded = true;
+	}
+
+	#endregion
 
 	string GetEditorPrevScene()
 	{

@@ -3,6 +3,7 @@ using UnityEngine;
 using Utility = UnityEngine.Networking.Utility;
 using Mirror;
 using System.Collections.Generic;
+using Messages.Client;
 
 /// <summary>
 ///     Request hacking node data from the server.
@@ -18,7 +19,7 @@ public class RequestHackingNodeConnections : ClientMessage
 
 		var playerScript = NetworkObjects[0].GetComponent<PlayerScript>();
 		var hackObject = NetworkObjects[1];
-		if (playerScript.IsInReach(hackObject, true))
+		if (playerScript.IsGameObjectReachable(hackObject, true, context: hackObject))
 		{
 
 			HackingProcessBase hackProcess = hackObject.GetComponent<HackingProcessBase>();

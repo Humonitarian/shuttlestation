@@ -63,6 +63,14 @@ MonoBehaviour:
         - {fileID: 11400000, guid: cde83a8cd1e2083479c40e5e1c19292b, type: 2}
         m_values: e8030000
       productionTime: 1
+    - name: Computer Design (Security Camera)
+      product: {fileID: 6127308570288668940, guid: 4ded354875f61b942821172e1c228fde,
+        type: 3}
+      materialToAmounts:
+        m_keys:
+        - {fileID: 11400000, guid: cde83a8cd1e2083479c40e5e1c19292b, type: 2}
+        m_values: e8030000
+      productionTime: 1
     - name: Computer Design (Security Records Console)
       product: {fileID: 3677348334658451422, guid: 0fbbae3a2eb179546a6cbd7c92b4a1cb,
         type: 3}
@@ -243,6 +251,14 @@ MonoBehaviour:
         - {fileID: 11400000, guid: cde83a8cd1e2083479c40e5e1c19292b, type: 2}
         m_values: e8030000
       productionTime: 1
+    - name: Machine Design (Donksoft Toy Vendor Board)
+      product: {fileID: 8838765617791620604, guid: 8dbe8df31d6c7b447ab0f48a1c1b8ca0,
+        type: 3}
+      materialToAmounts:
+        m_keys:
+        - {fileID: 11400000, guid: cde83a8cd1e2083479c40e5e1c19292b, type: 2}
+        m_values: e8030000
+      productionTime: 1
     - name: Machine Design (Food/Slime Processor Board)
       product: {fileID: 647291457413040798, guid: 30b17e1fb1d57fa4d9a3f52459c077d2,
         type: 3}
@@ -283,6 +299,14 @@ MonoBehaviour:
         - {fileID: 11400000, guid: cde83a8cd1e2083479c40e5e1c19292b, type: 2}
         m_values: e8030000
       productionTime: 1
+    - name: Machine Design (Photocopier Board)
+      product: {fileID: 8026946951644424067, guid: a4b60ac0a29864b4c9bb7e2dea51b153,
+        type: 3}
+      materialToAmounts:
+        m_keys:
+        - {fileID: 11400000, guid: cde83a8cd1e2083479c40e5e1c19292b, type: 2}
+        m_values: e8030000
+      productionTime: 1
     - name: Machine Design (Portable Booze Dispenser Board)
       product: {fileID: 3394833129495955646, guid: 3c4ccc974a921654f884c3a90188d75e,
         type: 3}
@@ -301,6 +325,14 @@ MonoBehaviour:
       productionTime: 1
     - name: Machine Design (Smartfridge Board)
       product: {fileID: 2308564274286761204, guid: ad4815304c0789c42ac14447f35f807f,
+        type: 3}
+      materialToAmounts:
+        m_keys:
+        - {fileID: 11400000, guid: cde83a8cd1e2083479c40e5e1c19292b, type: 2}
+        m_values: e8030000
+      productionTime: 1
+    - name: Machine Design (Vendor Board)
+      product: {fileID: 8031091669592220840, guid: 53c1066b5d991904aafa428058b16d1c,
         type: 3}
       materialToAmounts:
         m_keys:

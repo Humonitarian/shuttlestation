@@ -15,7 +15,7 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   layerTile: {fileID: 11400000, guid: f12f5073d044ea3458ce449531942979, type: 2}
-  matsOnDeconstruct: {fileID: 5680136605834777345, guid: ea07289ba72453444a4ff1202b47a57d,
+  matsOnDeconstruct: {fileID: 8579127030982015588, guid: 66a5287d0bf216847a2f4fe34228a0cf,
     type: 3}
   countOfMatsOnDissasemle: 2
   soundOnDeconstruct: Wrench
@@ -45,6 +45,7 @@ MonoBehaviour:
   objectType: 1
   AtmosPassable: 1
   Passable: 0
+  passableExclusionsToThis: []
 --- !u!1001 &1256876796715916942
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -52,11 +53,22 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -7987623581128504728, guid: 157fcff274a3644448d1ff3bdc019619,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1716766423784078090, guid: 157fcff274a3644448d1ff3bdc019619,
         type: 3}
       propertyPath: isInitiallyNotPushable
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1946156532474512604, guid: 157fcff274a3644448d1ff3bdc019619,
+        type: 3}
+      propertyPath: PresentSpriteSet
+      value: 
+      objectReference: {fileID: 11400000, guid: e5e529fb4b83e40458ae16bea840014d,
+        type: 2}
     - target: {fileID: 2503472526692704667, guid: 157fcff274a3644448d1ff3bdc019619,
         type: 3}
       propertyPath: initialIntegrity
@@ -158,6 +170,9 @@ PrefabInstance:
     - {fileID: -2373824299144082348, guid: 157fcff274a3644448d1ff3bdc019619, type: 3}
     - {fileID: 7975151385294962407, guid: 157fcff274a3644448d1ff3bdc019619, type: 3}
     - {fileID: -5694877607498037915, guid: 157fcff274a3644448d1ff3bdc019619, type: 3}
+    - {fileID: 9012874896178120669, guid: 157fcff274a3644448d1ff3bdc019619, type: 3}
+    - {fileID: 992935627982901909, guid: 157fcff274a3644448d1ff3bdc019619, type: 3}
+    - {fileID: -7987623581128504728, guid: 157fcff274a3644448d1ff3bdc019619, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: 157fcff274a3644448d1ff3bdc019619, type: 3}
 --- !u!1 &5198140336175476872 stripped
 GameObject:

@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Messages.Client;
 using UnityEngine;
 using Mirror;
 
@@ -35,7 +36,7 @@ public class DevDestroyMessage : ClientMessage
 
 			Vector2Int worldPos = NetworkObject.transform.position.To2Int();
 			UIManager.Instance.adminChatWindows.adminToAdminChat.ServerAddChatRecord(
-				$"{admin.ExpensiveName()} destroyed a {NetworkObject} at {worldPos}", AdminId);
+				$"{admin.Player().Username} destroyed a {NetworkObject} at {worldPos}", AdminId);
 			Despawn.ServerSingle(NetworkObject);
 		}
 	}

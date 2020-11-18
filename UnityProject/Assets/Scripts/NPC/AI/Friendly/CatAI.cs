@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-namespace NPC
+namespace Systems.MobAIs
 {
 	/// <summary>
 	/// AI brain for mice
@@ -23,7 +23,7 @@ namespace NPC
 		public override void OnEnable()
 		{
 			base.OnEnable();
-			mobMask = LayerMask.GetMask("Walls", "NPC");
+			mobMask = LayerMask.GetMask( "NPC");
 			coneOfSight = GetComponent<ConeOfSight>();
 			mobAttack = GetComponent<MobMeleeAttack>();
 		}
@@ -71,17 +71,19 @@ namespace NPC
 
 		private MouseAI AnyMiceNearby()
 		{
-			var hits = coneOfSight.GetObjectsInSight(mobMask,
-				dirSprites.CurrentFacingDirection,
+			var hits = coneOfSight.GetObjectsInSight(mobMask, LayerTypeSelection.Walls,
+				directional.CurrentDirection.Vector,
 				10f,
 				20);
 
-			foreach (Collider2D coll in hits)
+			foreach (var coll in hits)
 			{
-				if (coll.gameObject != gameObject && coll.gameObject.GetComponent<MouseAI>() != null
-				                                  && !coll.gameObject.GetComponent<LivingHealthBehaviour>().IsDead)
+				if (coll.GameObject == null) continue;
+
+				if (coll.GameObject != gameObject && coll.GameObject.GetComponent<MouseAI>() != null
+				                                  && !coll.GameObject.GetComponent<LivingHealthBehaviour>().IsDead)
 				{
-					return coll.gameObject.GetComponent<MouseAI>();
+					return coll.GameObject.GetComponent<MouseAI>();
 				}
 			}
 			return null;
@@ -151,8 +153,8 @@ namespace NPC
 		{
 			Chat.AddActionMsgToChat(
 				gameObject,
-				$"{mobNameCap} start licking its paws!",
-				$"{mobNameCap} start licking its paws!");
+				$"{mobNameCap} starts licking its paws!",
+				$"{mobNameCap} starts licking its paws!");
 		}
 
 		// Public method so it can be called from CorgiAI

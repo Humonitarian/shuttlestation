@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Messages.Client;
 using UnityEngine;
 using Mirror;
 
@@ -30,7 +31,7 @@ public class DevSpawnMessage : ClientMessage
 		{
 			Spawn.ServerPrefab(prefab, WorldPosition);
 			UIManager.Instance.adminChatWindows.adminToAdminChat.ServerAddChatRecord(
-				$"{admin.ExpensiveName()} spawned a {prefab.name} at {WorldPosition}", AdminId);
+				$"{admin.Player().Username} spawned a {prefab.name} at {WorldPosition}", AdminId);
 		}
 		else
 		{

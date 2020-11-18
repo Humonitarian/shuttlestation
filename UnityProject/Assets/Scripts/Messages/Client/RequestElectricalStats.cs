@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using Messages.Client;
 using UnityEngine;
 using Utility = UnityEngine.Networking.Utility;
 using Mirror;
@@ -16,7 +17,7 @@ public class RequestElectricalStats : ClientMessage
 		LoadMultipleObjects(new uint[] {Player, ElectricalItem});
 
 		var playerScript = NetworkObjects[0].GetComponent<PlayerScript>();
-		if (playerScript.IsInReach(NetworkObjects[1], true))
+		if (playerScript.IsGameObjectReachable(NetworkObjects[1], true, context: NetworkObjects[1]))
 		{
 			//Try powered device first:
 			var poweredDevice = NetworkObjects[1].GetComponent<ElectricalOIinheritance>();

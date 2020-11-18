@@ -1,5 +1,7 @@
-﻿using Mirror;
+﻿using System.Collections;
+using Mirror;
 using System.Linq;
+using TileManagement;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using YamlDotNet.Samples;
@@ -184,7 +186,6 @@ public class InteractableTiles : NetworkBehaviour, IClientInteractable<Positiona
 	public bool Interact(PositionalHandApply interaction)
 	{
 		//translate to the tile interaction system
-
 		Vector3Int localPosition = WorldToCell(interaction.WorldPositionTarget);
 		//pass the interaction down to the basic tile
 		LayerTile tile = LayerTileAt(interaction.WorldPositionTarget, true);
@@ -339,7 +340,7 @@ public class InteractableTiles : NetworkBehaviour, IClientInteractable<Positiona
 							PerformTileInteract(underFloorApply);
 							break;
 						}
-					}					
+					}
 				}
 			}
 			else
@@ -424,7 +425,7 @@ public class InteractableTiles : NetworkBehaviour, IClientInteractable<Positiona
 			OrientationEnum orientation = OrientationEnum.Down;
 			Vector3Int PlaceDirection = PlayerManager.LocalPlayerScript.WorldPos - tilePos;
 			bool isWallBlocked = false;
-			if (PlaceDirection.x != 0 && !MatrixManager.IsWallAt(tilePos + new Vector3Int(PlaceDirection.x > 0 ? 1 : -1, 0, 0), true))
+			if (PlaceDirection.x != 0 && !MatrixManager.IsWallAtAnyMatrix(tilePos + new Vector3Int(PlaceDirection.x > 0 ? 1 : -1, 0, 0), true))
 			{
 				if (PlaceDirection.x > 0)
 				{
@@ -437,7 +438,7 @@ public class InteractableTiles : NetworkBehaviour, IClientInteractable<Positiona
 			}
 			else
 			{
-				if (PlaceDirection.y != 0 && !MatrixManager.IsWallAt(tilePos + new Vector3Int(0, PlaceDirection.y > 0 ? 1 : -1, 0), true))
+				if (PlaceDirection.y != 0 && !MatrixManager.IsWallAtAnyMatrix(tilePos + new Vector3Int(0, PlaceDirection.y > 0 ? 1 : -1, 0), true))
 				{
 					if (PlaceDirection.y > 0)
 					{
@@ -454,7 +455,7 @@ public class InteractableTiles : NetworkBehaviour, IClientInteractable<Positiona
 				}
 			}
 
-			if (!MatrixManager.IsWallAt(tilePos, false) || isWallBlocked)
+			if (!MatrixManager.IsWallAtAnyMatrix(tilePos, false) || isWallBlocked)
 			{
 				if (instanceActive)
 				{
@@ -515,6 +516,64 @@ public class InteractableTiles : NetworkBehaviour, IClientInteractable<Positiona
 		{
 			instanceActive = false;
 			Highlight.DeHighlight();
+		}
+	}
+
+	/// <summary>
+	/// Method for mining ore
+	/// </summary>
+	/// <param name="worldPosition"></param>
+	/// <returns></returns>
+	public bool TryMine(Vector3 worldPosition)
+	{
+		Vector3Int cellPos = metaTileMap.WorldToCell(worldPosition);
+
+		var getTile = metaTileMap.GetTile(cellPos, LayerType.Walls) as BasicTile;
+		if (getTile == null || getTile.Mineable == false) return false;
+
+		SoundManager.PlayNetworkedAtPos("BreakStone", worldPosition);
+		Spawn.ServerPrefab(getTile.SpawnOnDeconstruct, worldPosition,
+			count: getTile.SpawnAmountOnDeconstruct);
+		tileChangeManager.RemoveTile(cellPos, LayerType.Walls);
+		tileChangeManager.RemoveOverlay(cellPos, LayerType.Effects);
+
+		return true;
+	}
+
+	/// <summary>
+	/// Creates an animated tile in world position
+	/// </summary>
+	/// <param name="worldPosition"> Where to create tile </param>
+	/// <param name="animatedTile"></param>
+	/// <param name="animationTime"></param>
+	public void CreateAnimatedTile(Vector3 worldPosition, AnimatedTile animatedTile, float animationTime)
+	{
+		Vector3Int cellPos = metaTileMap.WorldToCell(worldPosition);
+		var oldEffectLayerTile = metaTileMap.GetTile(cellPos, LayerType.Effects);
+
+		StartCoroutine(EnableAnimationCoroutine(cellPos,animatedTile, animationTime, oldEffectLayerTile));
+	}
+
+	private IEnumerator EnableAnimationCoroutine(
+		Vector3Int cellPos,
+		AnimatedTile animatedTile,
+		float animationTime,
+		LayerTile oldEffectLayerTile)
+	{
+		tileChangeManager.UpdateTile(cellPos, TileType.Effects, animatedTile.name);
+
+		yield return WaitFor.Seconds(animationTime);
+
+		ApplyOldOverlay(cellPos, oldEffectLayerTile);
+	}
+
+	private void ApplyOldOverlay(Vector3Int cellPos, LayerTile oldEffectLayerTile)
+	{
+		tileChangeManager.RemoveTile(cellPos, LayerType.Effects);
+
+		if (oldEffectLayerTile)
+		{
+			tileChangeManager.UpdateTile(cellPos, oldEffectLayerTile.TileType, oldEffectLayerTile.name);
 		}
 	}
 }

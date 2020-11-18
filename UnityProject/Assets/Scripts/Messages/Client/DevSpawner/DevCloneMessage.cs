@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Messages.Client;
 using UnityEngine;
 using Mirror;
 
@@ -32,11 +33,11 @@ public class DevCloneMessage : ClientMessage
 		else
 		{
 			LoadNetworkObject(ToClone);
-			if (MatrixManager.IsPassableAt(WorldPosition.RoundToInt(), true))
+			if (MatrixManager.IsPassableAtAllMatricesOneTile(WorldPosition.RoundToInt(), true))
 			{
 				Spawn.ServerClone(NetworkObject, WorldPosition);
 				UIManager.Instance.adminChatWindows.adminToAdminChat.ServerAddChatRecord(
-					$"{admin.ExpensiveName()} spawned a clone of {NetworkObject} at {WorldPosition}", AdminId);
+					$"{admin.Player().Username} spawned a clone of {NetworkObject} at {WorldPosition}", AdminId);
 			}
 		}
 	}

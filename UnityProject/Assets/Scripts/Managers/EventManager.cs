@@ -28,7 +28,8 @@ public enum EVENT
 	ToggleChatBubbles,
 	PlayerRejoined,
 	PreRoundStarted,
-	MatrixManagerInit
+	MatrixManagerInit,
+	BlobSpawned
 } // + other events. Add them as you need them
 
 [ExecuteInEditMode]
@@ -75,6 +76,7 @@ public class EventManager : MonoBehaviour
 
 	public static void RemoveHandler(EVENT evnt, Action action)
 	{
+		if (!eventTable.ContainsKey(evnt)) return;
 		if (eventTable[evnt] != null)
 		{
 			eventTable[evnt] -= action;
